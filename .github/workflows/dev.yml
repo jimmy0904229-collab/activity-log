@@ -27,15 +27,28 @@ jobs:
     runs-on: ubuntu-latest
     environment: dev
     steps:
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifact
+    - name: Download Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifact
 
-      - name: Release Dev Build
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ vars.BUILD_TAG }}
-          NOTE: ${{ vars.RELEASE_NOTE }}
-        run: |
-          gh release create "$TAG" build.zip --notes "$NOTE"
+    - name: Install GitHub CLI
+      run: |
+        sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0
+        sudo apt-add-repository https://cli.github.com/packages
+        sudo apt update
+        sudo apt install gh -y
+
+    - name: Authenticate GitHub CLI
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        echo "${GITHUB_TOKEN}" | gh auth login --with-token
+
+    - name: Release Dev Build
+      env:
+        TAG: ${{ vars.BUILD_TAG }}
+        NOTE: ${{ vars.RELEASE_NOTE }}
+      run: |
+        gh release create "$TAG" build.zip --notes "$NOTE" --repo ${{ github.repository }}
+
