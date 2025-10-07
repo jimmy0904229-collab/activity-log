@@ -5,7 +5,7 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-# ✅ 確保 GITHUB_TOKEN 有建立 release 的權限
+
 permissions:
   contents: write
 
@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ✅ 改成用 ncc，避免 bun i 錯誤
+     
       - name: Install dependencies and build
         run: |
           npm install
@@ -38,8 +38,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-artifact
-
-      # ✅ 用 GitHub 內建 token（不需 secrets.TOKEN）
       - name: Release Dev Build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -48,3 +46,19 @@ jobs:
         run: |
           gh auth setup-git
           gh release create "$TAG" build.zip --notes "$NOTE" --repo ${{ github.repository }}
+  deploy-staging:
+     needs: build
+     runs-on: ubuntu-latest
+     environment: staging
+     steps:
+       - uses: actions/download-artifact@v4
+         with:
+           name: build-artifact
+       - name: Release Staging Build
+         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ vars.BUILD_TAG }}
+          NOTE: ${{ vars.RELEASE_NOTE }}
+         run: |
+            gh release create "$TAG" build.zip --notes "$NOTE"
+
