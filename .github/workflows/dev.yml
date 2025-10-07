@@ -33,16 +33,10 @@ jobs:
         with:
           name: build-artifact
 
-      - name: Install GitHub CLI
-        run: |
-          sudo apt update
-          sudo apt install gh -y
-
-      - name: Authenticate GitHub CLI
-        env:
+      - name: Update README with activity log
+        uses: TheDanniCraft/activity-log@main
+        with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "${GITHUB_TOKEN}" | gh auth login --with-token
 
       - name: Release Dev Build
         env:
