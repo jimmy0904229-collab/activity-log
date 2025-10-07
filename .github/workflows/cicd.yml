@@ -1,0 +1,99 @@
+name: CI/CD Deployment Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+# 允許建立 release、上傳 artifact
+permissions:
+  contents: write
+
+jobs:
+  # ---------------- BUILD 階段 ----------------
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies and build
+        run: |
+          npm install
+          npx ncc build src/index.js --license licenses.txt
+          zip -r build.zip .
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifact
+          path: build.zip
+
+  # ---------------- DEV 階段 ----------------
+  deploy-dev:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+
+      - name: Release Dev Build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ vars.BUILD_TAG }}
+          NOTE: ${{ vars.RELEASE_NOTE }}
+        run: |
+          echo "🚀 Deploying to DEV environment..."
+          gh release create "$TAG" build.zip --notes "$NOTE" --repo ${{ github.repository }}
+
+  # ---------------- STAGING 階段 ----------------
+  deploy-staging:
+    needs: deploy-dev
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+
+      - name: Release Staging Build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="staging-${{ vars.BUILD_TAG }}"
+          NOTE="🧪 Pre-production test release"
+          echo "🚀 Deploying to STAGING environment..."
+          gh release create "$TAG" build.zip --notes "$NOTE" --repo ${{ github.repository }}
+
+  # ---------------- PRODUCTION 階段 ----------------
+  deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+
+      - name: Release Production Build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="prod-${{ vars.BUILD_TAG }}"
+          NOTE="✅ Official Production Release"
+          echo "🚀 Deploying to PRODUCTION environment..."
+          gh release create "$TAG" build.zip --notes "$NOTE" --repo ${{ github.repository }}
