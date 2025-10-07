@@ -3,6 +3,10 @@ name: CI Dev Deployment
 on:
   push:
     branches: [ main ]
+    
+permissions:
+  contents: write
+
 
 jobs:
   build:
