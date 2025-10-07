@@ -1,8 +1,13 @@
 name: CI Dev Deployment
+
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
+
+# ✅ 確保 GITHUB_TOKEN 有建立 release 的權限
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -11,10 +16,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build
+      # ✅ 改成用 ncc，避免 bun i 錯誤
+      - name: Install dependencies and build
         run: |
           npm install
-          npm run build
+          npx ncc build src/index.js --license licenses.txt
           zip -r build.zip .
 
       - name: Upload Artifact
@@ -33,11 +39,12 @@ jobs:
         with:
           name: build-artifact
 
+      # ✅ 用 GitHub 內建 token（不需 secrets.TOKEN）
       - name: Release Dev Build
         env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ vars.BUILD_TAG }}
           NOTE: ${{ vars.RELEASE_NOTE }}
         run: |
-          gh release create "$TAG" build.zip --notes "$NOTE"
-
+          gh auth setup-git
+          gh release create "$TAG" build.zip --notes "$NOTE" --repo ${{ github.repository }}
