@@ -39,7 +39,9 @@ jobs:
       - name: Update README with activity log
         uses: TheDanniCraft/activity-log@main
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Release Dev Build
         env:
@@ -48,6 +50,3 @@ jobs:
           NOTE: ${{ vars.RELEASE_NOTE }}
         run: |
           gh release create "$TAG" build.zip --notes "$NOTE" --repo ${{ github.repository }}
-
-          gh release create "$TAG" build.zip --notes "$NOTE" --repo ${{ github.repository }}
-
