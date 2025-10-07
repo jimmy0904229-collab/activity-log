@@ -1,26 +1,22 @@
 name: CI Dev Deployment
-
 on:
   push:
     branches: [ main ]
-
-permissions:
-  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install dependencies and build
+      - name: Build
         run: |
           npm install
           npm run build
           zip -r build.zip .
 
-      - name: Upload build artifact
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-artifact
@@ -31,17 +27,10 @@ jobs:
     runs-on: ubuntu-latest
     environment: dev
     steps:
-      - name: Download build artifact
+      - name: Download Artifact
         uses: actions/download-artifact@v4
         with:
           name: build-artifact
-
-      - name: Update README with activity log
-        uses: TheDanniCraft/activity-log@main
-        with:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }}
 
       - name: Release Dev Build
         env:
@@ -49,4 +38,5 @@ jobs:
           TAG: ${{ vars.BUILD_TAG }}
           NOTE: ${{ vars.RELEASE_NOTE }}
         run: |
-          gh release create "$TAG" build.zip --notes "$NOTE" --repo ${{ github.repository }}
+          gh release create "$TAG" build.zip --notes "$NOTE"
+
