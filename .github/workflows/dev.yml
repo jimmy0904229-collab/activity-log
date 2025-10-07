@@ -46,19 +46,5 @@ jobs:
         run: |
           gh auth setup-git
           gh release create "$TAG" build.zip --notes "$NOTE" --repo ${{ github.repository }}
-  deploy-staging:
-     needs: build
-     runs-on: ubuntu-latest
-     environment: staging
-     steps:
-       - uses: actions/download-artifact@v4
-         with:
-           name: build-artifact
-       - name: Release Staging Build
-         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ vars.BUILD_TAG }}
-          NOTE: ${{ vars.RELEASE_NOTE }}
-         run: |
-            gh release create "$TAG" build.zip --notes "$NOTE"
+
 
